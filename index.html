@@ -754,12 +754,27 @@
     .then(cfg => {
       API_URL    = cfg.api_url.replace(/\/$/, '');
       STREAM_URL = cfg.stream_url.replace(/\/$/, '');
-      document.getElementById('stream-cam0').src = STREAM_URL + '/stream/cam0';
-      document.getElementById('stream-cam1').src = STREAM_URL + '/stream/cam1';
+      // Start snapshot loop instead of MJPEG stream
+      startSnapshots(STREAM_URL);
       fetchData();
       fetchLog();
     })
     .catch(() => showToast('config.json niet gevonden!', 'error'));
+
+  // ── SNAPSHOTS ───────────────────────────────────────
+  function startSnapshots(streamUrl) {
+    function refreshCam(id, url) {
+      const img = document.getElementById(id);
+      if (img) {
+        const newImg = new Image();
+        newImg.onload = () => { img.src = newImg.src; };
+        newImg.src = url + '?t=' + Date.now();
+        setTimeout(() => refreshCam(id, url), 500);
+      }
+    }
+    refreshCam('stream-cam0', streamUrl + '/snapshot/cam0');
+    refreshCam('stream-cam1', streamUrl + '/snapshot/cam1');
+  }
 
   // ── NAVIGATION ──────────────────────────────────────
   function showPage(name) {
