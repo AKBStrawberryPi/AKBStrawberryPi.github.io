@@ -491,13 +491,19 @@
 </header>
 
 <nav>
-  <button class="nav-btn active" onclick="showPage('live')">📊 Live Status</button>
+  <button class="nav-btn active" onclick="showPage('info')">📋 Info</button>
   <button class="nav-btn" onclick="showPage('commands')">🚨 Commands</button>
-  <button class="nav-btn" onclick="showPage('info')">📋 Info</button>
+  <button class="nav-btn" onclick="showPage('live')">📊 Live Status</button>
 </nav>
 
+<div id="conn-bar" style="background:#1a1a1a; border-bottom:1px solid #2a2a2a; padding:8px 64px; display:flex; align-items:center; gap:10px; font-family:'DM Mono',monospace; font-size:11px; letter-spacing:1px;">
+  <span id="conn-dot" style="width:8px;height:8px;border-radius:50%;background:#555;display:inline-block;"></span>
+  <span id="conn-text" style="color:#555;">Verbinding controleren...</span>
+  <span style="margin-left:auto; color:#555;" id="last-update-text"></span>
+</div>
+
 <!-- ===================== LIVE STATUS PAGE ===================== -->
-<div class="page active" id="page-live">
+<div class="page" id="page-live">
 
   <div class="section-title">Sensor Status</div>
   <div class="status-grid">
@@ -547,41 +553,61 @@
     <h3>🔒 Emergency Controls</h3>
     <p>Voer het wachtwoord in om commando's te sturen naar de Pi.</p>
     <input type="password" class="pw-input" id="pw-input" placeholder="Wachtwoord..." onkeydown="if(event.key==='Enter') checkPassword()">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+      <input type="checkbox" id="remember-me" style="accent-color:var(--yellow);width:16px;height:16px;">
+      <label for="remember-me" style="font-size:13px;color:var(--muted);cursor:pointer;">Blijf ingelogd</label>
+    </div>
     <button class="pw-btn" onclick="checkPassword()">Inloggen</button>
     <div class="pw-error" id="pw-error">Verkeerd wachtwoord</div>
   </div>
 
   <div id="cmd-panel" style="display:none;">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
+      <button onclick="logout()" style="background:none;border:1px solid #333;color:var(--muted);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;">🔓 Uitloggen</button>
+    </div>
     <div class="command-grid">
       <div class="cmd-card">
         <span class="cmd-icon">💧</span>
         <div class="cmd-label">Water Kamer A</div>
-        <button class="cmd-btn" onclick="sendCommand('water_a')">Water geven</button>
+        <button class="cmd-btn" onclick="confirmCommand('water_a', 'Water geven aan Kamer A?')">Water geven</button>
       </div>
       <div class="cmd-card">
         <span class="cmd-icon">💧</span>
         <div class="cmd-label">Water Kamer B</div>
-        <button class="cmd-btn" onclick="sendCommand('water_b')">Water geven</button>
+        <button class="cmd-btn" onclick="confirmCommand('water_b', 'Water geven aan Kamer B?')">Water geven</button>
       </div>
       <div class="cmd-card">
         <span class="cmd-icon">💡</span>
         <div class="cmd-label">Licht Kamer B aan</div>
-        <button class="cmd-btn" onclick="sendCommand('light_b_on')">Aanzetten</button>
+        <button class="cmd-btn" onclick="confirmCommand('light_b_on', 'Licht Kamer B aanzetten?')">Aanzetten</button>
       </div>
       <div class="cmd-card">
         <span class="cmd-icon">🌑</span>
         <div class="cmd-label">Licht Kamer B uit</div>
-        <button class="cmd-btn" onclick="sendCommand('light_b_off')">Uitzetten</button>
+        <button class="cmd-btn" onclick="confirmCommand('light_b_off', 'Licht Kamer B uitzetten?')">Uitzetten</button>
       </div>
       <div class="cmd-card">
         <span class="cmd-icon">💨</span>
         <div class="cmd-label">Fan aan (beide)</div>
-        <button class="cmd-btn" onclick="sendCommand('fan_a_on')">Fan 100%</button>
+        <button class="cmd-btn" onclick="confirmCommand('fan_a_on', 'Fan op 100% zetten?')">Fan 100%</button>
       </div>
       <div class="cmd-card">
         <span class="cmd-icon">🛑</span>
         <div class="cmd-label">Fan uit (beide)</div>
-        <button class="cmd-btn" onclick="sendCommand('fan_off')">Fan uit</button>
+        <button class="cmd-btn" onclick="confirmCommand('fan_off', 'Fan uitzetten?')">Fan uit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Confirm dialog -->
+  <div id="confirm-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:center;justify-content:center;">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:36px;max-width:360px;width:90%;text-align:center;">
+      <div style="font-size:32px;margin-bottom:12px;">⚠️</div>
+      <div id="confirm-msg" style="font-size:15px;font-weight:600;margin-bottom:8px;"></div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:24px;">Deze actie wordt meteen uitgevoerd op de Pi.</div>
+      <div style="display:flex;gap:12px;">
+        <button onclick="cancelConfirm()" style="flex:1;background:none;border:1px solid var(--border);color:var(--muted);padding:12px;border-radius:8px;cursor:pointer;font-size:13px;">Annuleren</button>
+        <button id="confirm-ok" style="flex:1;background:var(--red);color:#000;border:none;padding:12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">Bevestigen</button>
       </div>
     </div>
   </div>
@@ -589,7 +615,7 @@
 </div>
 
 <!-- ===================== INFO PAGE ===================== -->
-<div class="page" id="page-info">
+<div class="page active" id="page-info">
 
   <div class="experiment">
     <div class="chamber">
@@ -785,26 +811,55 @@
   }
 
   // ── FETCH DATA ──────────────────────────────────────
+  let lastUpdateTime = null;
+
+  function updateLastUpdateText() {
+    if (!lastUpdateTime) return;
+    const secs = Math.round((Date.now() - lastUpdateTime) / 1000);
+    const txt = secs < 60 ? secs + 's geleden' : Math.round(secs/60) + 'min geleden';
+    const el = document.getElementById('last-update-text');
+    if (el) el.textContent = 'Laatste update: ' + txt;
+  }
+  setInterval(updateLastUpdateText, 1000);
+
+  function setConn(online) {
+    const dot  = document.getElementById('conn-dot');
+    const text = document.getElementById('conn-text');
+    if (!dot || !text) return;
+    dot.style.background  = online ? '#3de03d' : '#e8341a';
+    text.style.color      = online ? '#3de03d' : '#e8341a';
+    text.textContent      = online ? 'Pi online' : 'Pi offline';
+  }
+
   function fetchData() {
     if (!API_URL) return;
     fetch(API_URL + '/api/data')
       .then(r => r.json())
       .then(d => {
+        setConn(true);
+        lastUpdateTime = Date.now();
+        updateLastUpdateText();
         const a = d.kamer_a, b = d.kamer_b;
-        setText('a-temp',  a.temp + '°C');
-        setText('a-hum',   a.hum + '%');
+        // Kamer A — warn if temp>28 or hum>80
+        const aHot = a.temp > 28 || a.hum > 80;
+        const bHot = b.temp > 28 || b.hum > 80;
+        setText('a-temp',  a.temp + '°C', a.temp > 28);
+        setText('a-hum',   a.hum + '%',   a.hum > 80);
         setText('a-soil',  a.soil_v + 'V');
         setText('a-fan',   a.fan_speed + '%');
         setStatus('a-light', a.light_on);
         setText('a-pump',  d.pump_a_last);
-        setText('b-temp',  b.temp + '°C');
-        setText('b-hum',   b.hum + '%');
+        setText('b-temp',  b.temp + '°C', b.temp > 28);
+        setText('b-hum',   b.hum + '%',   b.hum > 80);
         setText('b-soil',  b.soil_v + 'V');
         setText('b-fan',   b.fan_speed + '%');
         setStatus('b-light', b.light_on);
         setText('b-pump',  d.pump_b_last);
+        // Warning border on cards
+        document.querySelectorAll('.chamber-card')[0].style.borderColor = aHot ? 'var(--red)' : '';
+        document.querySelectorAll('.chamber-card')[1].style.borderColor = bHot ? 'var(--red)' : '';
       })
-      .catch(() => {});
+      .catch(() => setConn(false));
     setTimeout(fetchData, 10000);
   }
 
@@ -815,33 +870,97 @@
       .then(logs => {
         const el = document.getElementById('log-list');
         if (!logs.length) { el.innerHTML = '<div class="log-entry"><span class="log-time">—</span><span class="log-event">Geen events</span></div>'; return; }
-        el.innerHTML = logs.map(l =>
-          `<div class="log-entry"><span class="log-time">${l.time}</span><span class="log-event">${l.event}</span></div>`
-        ).join('');
+        el.innerHTML = logs.map(l => {
+          const ago = timeAgo(l.time);
+          return `<div class="log-entry"><span class="log-time">${l.time}<br><span style="font-size:10px;color:#444;">${ago}</span></span><span class="log-event">${l.event}</span></div>`;
+        }).join('');
       })
       .catch(() => {});
     setTimeout(fetchLog, 15000);
   }
 
-  function setText(id, val) {
+  function setText(id, val, warn) {
     const el = document.getElementById(id);
-    if (el) el.textContent = val;
+    if (!el) return;
+    el.textContent = val;
+    el.style.color = warn ? '#ff4444' : '';
+    el.style.fontWeight = warn ? '700' : '';
   }
 
   function setStatus(id, on) {
     const el = document.getElementById(id);
     if (!el) return;
     el.textContent = on ? 'AAN' : 'UIT';
-    el.className = 'sensor-value ' + (on ? 'status-on' : 'status-off');
+    el.style.color = on ? 'var(--green-light)' : '#555555';
+    el.style.fontWeight = '600';
   }
 
-  // ── PASSWORD ────────────────────────────────────────
+  // ── COOKIE HELPERS ──────────────────────────────────
+  function setCookie(name, value, days) {
+    const exp = new Date(Date.now() + days*864e5).toUTCString();
+    document.cookie = name + '=' + encodeURIComponent(value) + ';expires=' + exp + ';path=/';
+  }
+  function getCookie(name) {
+    return decodeURIComponent((document.cookie.match('(?:^|; )' + name + '=([^;]*)') || [])[1] || '');
+  }
+  function deleteCookie(name) {
+    document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/';
+  }
+
+  // Check cookie on load
+  window.addEventListener('load', () => {
+    const saved = getCookie('sp_pw');
+    if (saved) {
+      PW = saved;
+      document.getElementById('pw-gate').style.display = 'none';
+      document.getElementById('cmd-panel').style.display = 'block';
+    }
+  });
+
   function checkPassword() {
     const val = document.getElementById('pw-input').value;
     if (val.length < 3) { document.getElementById('pw-error').style.display = 'block'; return; }
     PW = val;
+    if (document.getElementById('remember-me').checked) {
+      setCookie('sp_pw', PW, 30);
+    }
     document.getElementById('pw-gate').style.display = 'none';
     document.getElementById('cmd-panel').style.display = 'block';
+  }
+
+  function logout() {
+    PW = '';
+    deleteCookie('sp_pw');
+    document.getElementById('pw-gate').style.display = 'block';
+    document.getElementById('cmd-panel').style.display = 'none';
+    document.getElementById('pw-input').value = '';
+  }
+
+  // ── TIME AGO ────────────────────────────────────────
+  function timeAgo(timeStr) {
+    const past = new Date(timeStr.replace(' ', 'T'));
+    const secs = Math.round((Date.now() - past) / 1000);
+    if (secs < 60)   return secs + 's geleden';
+    if (secs < 3600) return Math.round(secs/60) + 'min geleden';
+    if (secs < 86400) return Math.round(secs/3600) + 'u geleden';
+    return Math.round(secs/86400) + 'd geleden';
+  }
+
+  // ── CONFIRM DIALOG ───────────────────────────────────
+  let pendingCmd = null;
+  function confirmCommand(cmd, msg) {
+    pendingCmd = cmd;
+    document.getElementById('confirm-msg').textContent = msg;
+    const overlay = document.getElementById('confirm-overlay');
+    overlay.style.display = 'flex';
+    document.getElementById('confirm-ok').onclick = () => {
+      overlay.style.display = 'none';
+      sendCommand(pendingCmd);
+    };
+  }
+  function cancelConfirm() {
+    document.getElementById('confirm-overlay').style.display = 'none';
+    pendingCmd = null;
   }
 
   // ── COMMANDS ────────────────────────────────────────
