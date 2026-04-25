@@ -907,25 +907,63 @@
     document.cookie = name + '=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/';
   }
 
-  // Check cookie on load
+  // Check cookie on load — verify with API first
   window.addEventListener('load', () => {
     const saved = getCookie('sp_pw');
-    if (saved) {
-      PW = saved;
-      document.getElementById('pw-gate').style.display = 'none';
-      document.getElementById('cmd-panel').style.display = 'block';
+    if (saved && API_URL) {
+      fetch(API_URL + '/api/verify', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ password: saved })
+      })
+      .then(r => r.json())
+      .then(d => {
+        if (d.ok) {
+          PW = saved;
+          document.getElementById('pw-gate').style.display = 'none';
+          document.getElementById('cmd-panel').style.display = 'block';
+        } else {
+          deleteCookie('sp_pw');
+        }
+      })
+      .catch(() => {});
     }
   });
 
   function checkPassword() {
     const val = document.getElementById('pw-input').value;
     if (val.length < 3) { document.getElementById('pw-error').style.display = 'block'; return; }
-    PW = val;
-    if (document.getElementById('remember-me').checked) {
-      setCookie('sp_pw', PW, 30);
-    }
-    document.getElementById('pw-gate').style.display = 'none';
-    document.getElementById('cmd-panel').style.display = 'block';
+    if (!API_URL) { showToast('API URL niet geladen', 'error'); return; }
+    const btn = document.querySelector('.pw-btn');
+    btn.textContent = 'Controleren...';
+    btn.disabled = true;
+    fetch(API_URL + '/api/verify', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ password: val })
+    })
+    .then(r => r.json())
+    .then(d => {
+      btn.textContent = 'Inloggen';
+      btn.disabled = false;
+      if (d.ok) {
+        PW = val;
+        if (document.getElementById('remember-me').checked) {
+          setCookie('sp_pw', PW, 30);
+        }
+        document.getElementById('pw-error').style.display = 'none';
+        document.getElementById('pw-gate').style.display = 'none';
+        document.getElementById('cmd-panel').style.display = 'block';
+      } else {
+        document.getElementById('pw-error').style.display = 'block';
+        showToast('Verkeerd wachtwoord', 'error');
+      }
+    })
+    .catch(() => {
+      btn.textContent = 'Inloggen';
+      btn.disabled = false;
+      showToast('Kan Pi niet bereiken', 'error');
+    });
   }
 
   function logout() {
