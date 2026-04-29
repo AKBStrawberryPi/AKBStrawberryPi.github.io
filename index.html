@@ -444,6 +444,20 @@
   .step-content p  { font-size: 12px; color: var(--muted); line-height: 1.5; }
   .step-content code { font-family: 'DM Mono', monospace; font-size: 11px; background: #1e1e1e; padding: 2px 6px; border-radius: 6px; color: var(--yellow); border: 1px solid #2e2e2e; }
 
+  .kamer-btn {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    cursor: pointer;
+    color: var(--text);
+    transition: border-color 0.2s, background 0.2s;
+    text-align: center;
+    width: 100%;
+  }
+  .kamer-btn:hover { border-color: var(--red); }
+  .kamer-btn.active { border-color: var(--yellow); background: #1a1600; }
+
   /* FOOTER */
   footer {
     background: #000;
@@ -562,40 +576,34 @@
   </div>
 
   <div id="cmd-panel" style="display:none;">
-    <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
+    <div style="display:flex;justify-content:flex-end;margin-bottom:20px;">
       <button onclick="logout()" style="background:none;border:1px solid #333;color:var(--muted);padding:8px 16px;border-radius:8px;cursor:pointer;font-size:12px;font-family:'DM Mono',monospace;">🔓 Uitloggen</button>
     </div>
-    <div class="command-grid">
-      <div class="cmd-card">
-        <span class="cmd-icon">💧</span>
-        <div class="cmd-label">Water Kamer A</div>
-        <button class="cmd-btn" onclick="confirmCommand('water_a', 'Water geven aan Kamer A?')">Water geven</button>
-      </div>
-      <div class="cmd-card">
-        <span class="cmd-icon">💧</span>
-        <div class="cmd-label">Water Kamer B</div>
-        <button class="cmd-btn" onclick="confirmCommand('water_b', 'Water geven aan Kamer B?')">Water geven</button>
-      </div>
-      <div class="cmd-card">
-        <span class="cmd-icon">💡</span>
-        <div class="cmd-label">Licht Kamer B aan</div>
-        <button class="cmd-btn" onclick="confirmCommand('light_b_on', 'Licht Kamer B aanzetten?')">Aanzetten</button>
-      </div>
-      <div class="cmd-card">
-        <span class="cmd-icon">🌑</span>
-        <div class="cmd-label">Licht Kamer B uit</div>
-        <button class="cmd-btn" onclick="confirmCommand('light_b_off', 'Licht Kamer B uitzetten?')">Uitzetten</button>
-      </div>
-      <div class="cmd-card">
-        <span class="cmd-icon">💨</span>
-        <div class="cmd-label">Fan aan (beide)</div>
-        <button class="cmd-btn" onclick="confirmCommand('fan_a_on', 'Fan op 100% zetten?')">Fan 100%</button>
-      </div>
-      <div class="cmd-card">
-        <span class="cmd-icon">🛑</span>
-        <div class="cmd-label">Fan uit (beide)</div>
-        <button class="cmd-btn" onclick="confirmCommand('fan_off', 'Fan uitzetten?')">Fan uit</button>
-      </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:24px;">
+      <button class="kamer-btn active" id="kbtn-a" onclick="selectKamer('a')">
+        <span style="font-size:24px;display:block;margin-bottom:6px;">🍓</span>
+        <span style="font-size:15px;font-weight:600;">Kamer A</span>
+        <span style="font-size:11px;color:var(--muted);display:block;margin-top:2px;">24/7 Licht</span>
+      </button>
+      <button class="kamer-btn" id="kbtn-b" onclick="selectKamer('b')">
+        <span style="font-size:24px;display:block;margin-bottom:6px;">🌿</span>
+        <span style="font-size:15px;font-weight:600;">Kamer B</span>
+        <span style="font-size:11px;color:var(--muted);display:block;margin-top:2px;">Dagcyclus</span>
+      </button>
+    </div>
+    <div id="cmds-a" class="command-grid">
+      <div class="cmd-card"><span class="cmd-icon">💧</span><div class="cmd-label">Water geven</div><button class="cmd-btn" onclick="waterPrompt('water_a','Kamer A')">Water geven</button></div>
+      <div class="cmd-card"><span class="cmd-icon">💡</span><div class="cmd-label">Licht aan</div><button class="cmd-btn" onclick="confirmCommand('light_a_on','Licht Kamer A aanzetten?','Licht Kamer A aan')">Aanzetten</button></div>
+      <div class="cmd-card"><span class="cmd-icon">🌑</span><div class="cmd-label">Licht uit</div><button class="cmd-btn" onclick="confirmCommand('light_a_off','Licht Kamer A uitzetten?','Licht Kamer A uit')">Uitzetten</button></div>
+      <div class="cmd-card"><span class="cmd-icon">💨</span><div class="cmd-label">Fan aan</div><button class="cmd-btn" onclick="confirmCommand('fan_a_on','Fan Kamer A op 100%?','Fan Kamer A aan (100%)')">Fan 100%</button></div>
+      <div class="cmd-card"><span class="cmd-icon">🛑</span><div class="cmd-label">Fan uit</div><button class="cmd-btn" onclick="confirmCommand('fan_a_off','Fan Kamer A uitzetten?','Fan Kamer A uit')">Fan uit</button></div>
+    </div>
+    <div id="cmds-b" class="command-grid" style="display:none;">
+      <div class="cmd-card"><span class="cmd-icon">💧</span><div class="cmd-label">Water geven</div><button class="cmd-btn" onclick="waterPrompt('water_b','Kamer B')">Water geven</button></div>
+      <div class="cmd-card"><span class="cmd-icon">💡</span><div class="cmd-label">Licht aan</div><button class="cmd-btn" onclick="confirmCommand('light_b_on','Licht Kamer B aanzetten?','Licht Kamer B aan')">Aanzetten</button></div>
+      <div class="cmd-card"><span class="cmd-icon">🌑</span><div class="cmd-label">Licht uit</div><button class="cmd-btn" onclick="confirmCommand('light_b_off','Licht Kamer B uitzetten?','Licht Kamer B uit')">Uitzetten</button></div>
+      <div class="cmd-card"><span class="cmd-icon">💨</span><div class="cmd-label">Fan aan</div><button class="cmd-btn" onclick="confirmCommand('fan_b_on','Fan Kamer B op 100%?','Fan Kamer B aan (100%)')">Fan 100%</button></div>
+      <div class="cmd-card"><span class="cmd-icon">🛑</span><div class="cmd-label">Fan uit</div><button class="cmd-btn" onclick="confirmCommand('fan_b_off','Fan Kamer B uitzetten?','Fan Kamer B uit')">Fan uit</button></div>
     </div>
   </div>
 
@@ -608,6 +616,22 @@
       <div style="display:flex;gap:12px;">
         <button onclick="cancelConfirm()" style="flex:1;background:none;border:1px solid var(--border);color:var(--muted);padding:12px;border-radius:8px;cursor:pointer;font-size:13px;">Annuleren</button>
         <button id="confirm-ok" style="flex:1;background:var(--red);color:#000;border:none;padding:12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">Bevestigen</button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- Water duration dialog -->
+  <div id="water-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.7);z-index:200;align-items:center;justify-content:center;">
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:36px;max-width:360px;width:90%;text-align:center;">
+      <div style="font-size:32px;margin-bottom:12px;">💧</div>
+      <div id="water-title" style="font-size:15px;font-weight:600;margin-bottom:8px;"></div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:20px;">Hoelang water geven?</div>
+      <input id="water-duration" type="number" min="1" max="60" value="5" style="width:100%;background:#0e0e0e;border:1px solid var(--border);border-radius:8px;padding:12px;color:var(--text);font-size:16px;text-align:center;margin-bottom:6px;outline:none;">
+      <div style="font-size:11px;color:var(--muted2);margin-bottom:20px;">seconden (standaard: 5s)</div>
+      <div style="display:flex;gap:12px;">
+        <button onclick="cancelWater()" style="flex:1;background:none;border:1px solid var(--border);color:var(--muted);padding:12px;border-radius:8px;cursor:pointer;font-size:13px;">Annuleren</button>
+        <button onclick="confirmWater()" style="flex:1;background:var(--yellow);color:#000;border:none;padding:12px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;">Water geven</button>
       </div>
     </div>
   </div>
@@ -785,7 +809,7 @@
       fetchData();
       fetchLog();
     })
-    .catch(() => showToast('config.json niet gevonden!', 'error'));
+    .catch(() => showToast('config.json niet gevonden!', '', 'error'));
 
   // ── SNAPSHOTS ───────────────────────────────────────
   function startSnapshots(streamUrl) {
@@ -933,7 +957,7 @@
   function checkPassword() {
     const val = document.getElementById('pw-input').value;
     if (val.length < 3) { document.getElementById('pw-error').style.display = 'block'; return; }
-    if (!API_URL) { showToast('API URL niet geladen', 'error'); return; }
+    if (!API_URL) { showToast('API URL niet geladen', '', 'error'); return; }
     const btn = document.querySelector('.pw-btn');
     btn.textContent = 'Controleren...';
     btn.disabled = true;
@@ -956,13 +980,13 @@
         document.getElementById('cmd-panel').style.display = 'block';
       } else {
         document.getElementById('pw-error').style.display = 'block';
-        showToast('Verkeerd wachtwoord', 'error');
+        showToast('Verkeerd wachtwoord', '', 'error');
       }
     })
     .catch(() => {
       btn.textContent = 'Inloggen';
       btn.disabled = false;
-      showToast('Kan Pi niet bereiken', 'error');
+      showToast('Kan Pi niet bereiken', '', 'error');
     });
   }
 
@@ -986,8 +1010,34 @@
 
   // ── CONFIRM DIALOG ───────────────────────────────────
   let pendingCmd = null;
-  function confirmCommand(cmd, msg) {
+  let pendingLabel = null;
+
+  function selectKamer(k) {
+    document.getElementById('cmds-a').style.display = k === 'a' ? 'grid' : 'none';
+    document.getElementById('cmds-b').style.display = k === 'b' ? 'grid' : 'none';
+    document.getElementById('kbtn-a').classList.toggle('active', k === 'a');
+    document.getElementById('kbtn-b').classList.toggle('active', k === 'b');
+  }
+
+  function waterPrompt(cmd, kamerLabel) {
     pendingCmd = cmd;
+    pendingLabel = 'Water gegeven aan ' + kamerLabel;
+    document.getElementById('water-title').textContent = 'Water geven aan ' + kamerLabel;
+    document.getElementById('water-overlay').style.display = 'flex';
+  }
+  function cancelWater() {
+    document.getElementById('water-overlay').style.display = 'none';
+    pendingCmd = null; pendingLabel = null;
+  }
+  function confirmWater() {
+    const dur = parseFloat(document.getElementById('water-duration').value) || 5;
+    document.getElementById('water-overlay').style.display = 'none';
+    sendCommand(pendingCmd, dur);
+  }
+
+  function confirmCommand(cmd, msg, label) {
+    pendingCmd = cmd;
+    pendingLabel = label || cmd;
     document.getElementById('confirm-msg').textContent = msg;
     const overlay = document.getElementById('confirm-overlay');
     overlay.style.display = 'flex';
@@ -998,12 +1048,12 @@
   }
   function cancelConfirm() {
     document.getElementById('confirm-overlay').style.display = 'none';
-    pendingCmd = null;
+    pendingCmd = null; pendingLabel = null;
   }
 
   // ── COMMANDS ────────────────────────────────────────
   function sendCommand(cmd) {
-    if (!API_URL) { showToast('API URL niet geladen', 'error'); return; }
+    if (!API_URL) { showToast('API URL niet geladen', '', 'error'); return; }
     fetch(API_URL + '/api/command', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
@@ -1011,19 +1061,19 @@
     })
     .then(r => r.json())
     .then(d => {
-      if (d.ok) showToast('Commando verstuurd: ' + cmd, 'success');
-      else { showToast(d.error, 'error'); if (d.error === 'Wrong password') { PW = ''; document.getElementById('pw-gate').style.display = 'block'; document.getElementById('cmd-panel').style.display = 'none'; } }
+      if (d.ok) showToast(pendingLabel || cmd, cmd, 'success');
+      else { showToast(d.error, '', 'error'); if (d.error === 'Wrong password') { PW = ''; document.getElementById('pw-gate').style.display = 'block'; document.getElementById('cmd-panel').style.display = 'none'; } }
     })
-    .catch(() => showToast('Verbinding mislukt', 'error'));
+    .catch(() => showToast('Verbinding mislukt', '', 'error'));
   }
 
   // ── TOAST ───────────────────────────────────────────
-  function showToast(msg, type) {
+  function showToast(label, sub, type) {
     const t = document.getElementById('toast');
-    t.textContent = msg;
+    t.innerHTML = label + (sub && sub !== label ? '<br><span style="font-size:10px;opacity:0.6;font-family:DM Mono,monospace;">' + sub + '</span>' : '');
     t.className = 'toast ' + type;
     t.style.display = 'block';
-    setTimeout(() => { t.style.display = 'none'; }, 3000);
+    setTimeout(() => { t.style.display = 'none'; }, 3500);
   }
 
   // ── INFO PHASES ─────────────────────────────────────
