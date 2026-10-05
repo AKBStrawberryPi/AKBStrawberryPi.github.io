@@ -225,6 +225,24 @@
     min-height: 200px;
   }
 
+  /* ALARM BANNER */
+  #alert-banner {
+    display: none;
+    background: #2a0a06;
+    border-bottom: 2px solid var(--red);
+    padding: 12px 64px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    color: #ff7070;
+    letter-spacing: 0.5px;
+  }
+  #alert-banner .alert-title { font-weight: 700; letter-spacing: 2px; text-transform: uppercase; color: #ff4444; }
+  #alert-banner .alert-line { margin-top: 6px; }
+  #alert-banner .alert-since { color: #a05048; }
+  .cam-state { color: #ff4444; font-weight: 700; }
+  .log-event.alarm { color: #ff7070; font-weight: 700; }
+  .log-event.ok { color: var(--green-light); }
+
   /* LOG */
   .log-list {
     background: var(--card);
@@ -529,6 +547,8 @@
   <span id="conn-text" style="color:#555;">Verbinding controleren...</span>
   <span style="margin-left:auto; color:#555;" id="last-update-text"></span>
 </div>
+
+<div id="alert-banner"></div>
 
 <!-- ===================== LIVE STATUS PAGE ===================== -->
 <div class="page" id="page-live">
@@ -889,13 +909,47 @@
       const img = document.getElementById(id);
       if (img) {
         const newImg = new Image();
-        newImg.onload = () => { img.src = newImg.src; };
+        newImg.onload = () => { img.src = newImg.src; setCamState(id, true); };
+        newImg.onerror = () => setCamState(id, false);
         newImg.src = url + '?t=' + Date.now();
         setTimeout(() => refreshCam(id, url), 500);
       }
     }
     refreshCam('stream-cam0', streamUrl + '/snapshot/cam0');
     refreshCam('stream-cam1', streamUrl + '/snapshot/cam1');
+  }
+
+  function setCamState(id, ok) {
+    const img = document.getElementById(id);
+    if (!img) return;
+    img.style.opacity = ok ? '' : '0.25';
+    let tag = img.parentElement.querySelector('.cam-state');
+    if (!tag) {
+      tag = document.createElement('span');
+      tag.className = 'cam-state';
+      img.previousElementSibling.appendChild(tag);
+    }
+    tag.textContent = ok ? '' : ' — GEEN BEELD';
+  }
+
+  // ── ALARMEN ─────────────────────────────────────────
+  function escapeHtml(t) {
+    return String(t).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function showAlerts(alerts) {
+    const el = document.getElementById('alert-banner');
+    if (!el) return;
+    if (!alerts || !alerts.length) {
+      el.style.display = 'none';
+      el.innerHTML = '';
+      return;
+    }
+    el.style.display = 'block';
+    el.innerHTML = '<div class="alert-title">⚠ Alarm</div>' + alerts.map(a =>
+      '<div class="alert-line">' + escapeHtml(a.message) +
+      ' <span class="alert-since">(sinds ' + escapeHtml(a.since) + ')</span></div>'
+    ).join('');
   }
 
   // ── NAVIGATION ──────────────────────────────────────
@@ -936,6 +990,7 @@
         setConn(true);
         lastUpdateTime = Date.now();
         updateLastUpdateText();
+        showAlerts(d.alerts);
         const a = d.kamer_a, b = d.kamer_b;
         // Kamer A — warn if temp>28 or hum>80
         const aHot = a.temp > 28 || a.hum > 80;
@@ -969,7 +1024,8 @@
         if (!logs.length) { el.innerHTML = '<div class="log-entry"><span class="log-time">—</span><span class="log-event">Geen events</span></div>'; return; }
         el.innerHTML = logs.map(l => {
           const ago = timeAgo(l.time);
-          return `<div class="log-entry"><span class="log-time">${l.time}<br><span style="font-size:10px;color:#444;">${ago}</span></span><span class="log-event">${l.event}</span></div>`;
+          const cls = l.event.startsWith('ALARM') ? ' alarm' : (l.event.startsWith('OK:') ? ' ok' : '');
+          return `<div class="log-entry"><span class="log-time">${l.time}<br><span style="font-size:10px;color:#444;">${ago}</span></span><span class="log-event${cls}">${l.event}</span></div>`;
         }).join('');
       })
       .catch(() => {});
