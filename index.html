@@ -266,12 +266,11 @@
   .pumping .wv { animation-duration: 1.6s; }
   .gw { transition: transform 1.6s ease; }
   @keyframes wvmove { to { transform: translateX(-50px); } }
-  .log-entry.lg-a .log-event { color: #ff6a55; }
-  .log-entry.lg-b .log-event { color: var(--green-light); }
-  .log-entry.lg-n .log-event { color: #9a9a9a; }
-  .log-entry.lg-a { box-shadow: inset 3px 0 0 var(--red); }
-  .log-entry.lg-b { box-shadow: inset 3px 0 0 var(--green-light); }
+  .log-entry.lg-a { background: rgba(232,52,26,.07); box-shadow: inset 3px 0 0 var(--red); }
+  .log-entry.lg-b { background: rgba(45,181,45,.07); box-shadow: inset 3px 0 0 var(--green-light); }
   .log-entry.lg-n { box-shadow: inset 3px 0 0 #444; }
+  .log-entry .log-event, .log-entry .log-event.ok { color: var(--text); }
+  .log-entry .log-event.alarm { color: #ff7070; font-weight: 700; }
 
   /* ALARM BANNER */
   #alert-banner {
@@ -1130,7 +1129,7 @@
         if (!logs.length) { el.innerHTML = '<div class="log-entry"><span class="log-time">—</span><span class="log-event">Geen events</span></div>'; return; }
         el.innerHTML = logs.map(l => {
           const ago = timeAgo(l.time);
-          const cls = l.event.startsWith('ALARM') ? ' alarm' : (l.event.startsWith('OK:') ? ' ok' : '');
+          const cls = (l.event.startsWith('ALARM') || l.event.startsWith('NOODSTOP')) ? ' alarm' : (l.event.startsWith('OK:') ? ' ok' : '');
           return `<div class="log-entry lg-${logRoom(l.event)}"><span class="log-time">${l.time}<br><span style="font-size:10px;color:#444;">${ago}</span></span><span class="log-event${cls}">${l.event}</span></div>`;
         }).join('');
       })
